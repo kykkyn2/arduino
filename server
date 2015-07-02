@@ -1,0 +1,56 @@
+#include <SPI.h>
+#include <Ethernet.h>
+
+byte mac[] = { 0x90, 0xA2, 0xDA, 0x0D, 0x24, 0x5E };   // 사용하고 있는 이더넷 쉴드의 mac  주소
+IPAddress ip(192,168, 1, 10);                                     // [단계 4]에서 결정한  이더넷 쉴드의 IP 주소.
+EthernetServer server(80); 
+
+void setup()
+{
+    pinMode(4, OUTPUT);
+    digitalWrite(4, HIGH);
+    Ethernet.begin(mac, ip); 
+    server.begin();          
+}
+
+void loop()
+{
+    EthernetClient client = server.available(); 
+
+    if (client) { 
+        boolean currentLineIsBlank = true;
+        while (client.connected()) {
+            if (client.available()) {  
+                char c = client.read();
+                if (c == '\n' && currentLineIsBlank) {
+                    client.println("HTTP/1.1 200 OK");
+                    client.println("Content-Type: text/html");
+                    client.println("Connection: close");
+                    client.println();
+                    client.println("<!DOCTYPE html>");
+                    client.println("<html>");
+                    client.println("<head>");
+                    client.println("<title>Arduino Web Page</title>");
+                    client.println("</head>");
+                    client.println("<body>");
+                    client.println("<center>");
+                    client.println("<h1>Hello from Arduino!</h1>");
+                    client.println("<p>A web page from the Arduino server</p>");
+                    client.println("<p><a href = http://cafe.naver.com/studyonarduino target=_blank>Study On Arduino</a></p>");
+                    client.println("</center>");
+                    client.println("</body>");
+                    client.println("</html>");
+                    break;
+                }
+                if (c == '\n') {
+                    currentLineIsBlank = true;
+                }
+                else if (c != '\r') {
+                    currentLineIsBlank = false;
+                }
+            }
+        }
+        delay(1);     
+        client.stop();
+    }
+}
